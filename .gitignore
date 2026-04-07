@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+*.json
+*.xlsx
+logs/
+reports/
+worker.log
+*.log
