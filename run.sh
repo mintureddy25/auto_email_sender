@@ -1,7 +1,8 @@
 #!/bin/bash
 # Cron job: scrape LinkedIn + insert into RabbitMQ queue
 
-cd /home/payatu/personal/auto_email_sender
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
 
 LOG_FILE="./logs/cron_$(date +%Y%m%d_%H%M%S).log"
 mkdir -p ./logs ./data
