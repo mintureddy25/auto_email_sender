@@ -1,5 +1,7 @@
 #!/bin/bash
 # Cron job: scrape LinkedIn + insert into RabbitMQ queue
+# Runs via cron at 9:00 AM and 10:30 PM daily
+# Worker service (auto-email-worker) picks up queued emails 24/7
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"

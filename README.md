@@ -5,8 +5,8 @@ Automated LinkedIn scraper that collects recruiter emails, phone numbers, job ap
 ## Architecture
 
 ```
-[Cron 9AM + 10:30PM]                [24/7 Service]
-scrape.py                           worker.py
+[Cron 9AM + 10:30PM]                [24/7 systemd Service]
+run.sh → scrape.py                  auto-email-worker → worker.py
   │                                    │
   ├── Scrape LinkedIn                  ├── Consume RabbitMQ queue
   │   ├── Hiring Posts                 ├── Send email via Gmail SMTP
@@ -31,8 +31,7 @@ auto_email_sender/
 ├── run.sh                     # Cron runner script
 ├── setup.sh                   # One-time setup (systemd + cron)
 ├── requirements.txt
-├── .env.example
-├── auto-email-worker.service  # Systemd service config
+├── .env
 │
 ├── src/
 │   ├── config.py              # All config & constants
@@ -68,10 +67,9 @@ auto_email_sender/
 
 ## Setup
 
-### 1. Clone and configure
+### 1. Configure
 
 ```bash
-git clone <repo-url>
 cd auto_email_sender
 cp .env.example .env
 ```
@@ -95,8 +93,8 @@ sudo ./setup.sh
 This will:
 - Install Python dependencies
 - Create `data/` and `logs/` directories
-- Set up systemd service (24/7 email worker)
-- Set up cron jobs (9AM + 10:30PM scraping)
+- Install and start systemd service (`auto-email-worker`) — runs 24/7, survives reboots
+- Set up cron jobs for the current user (9AM + 10:30PM scraping)
 
 ### 3. Add your resume
 
@@ -121,7 +119,10 @@ Edit `src/config.py` to change:
 # Scrape LinkedIn and queue emails
 python3 scrape.py
 
-# Start worker (runs continuously)
+# Or use the cron runner script
+./run.sh
+
+# Start worker manually (if not using systemd)
 python3 worker.py
 ```
 
@@ -152,6 +153,9 @@ tail -f worker.log
 
 # Restart worker
 sudo systemctl restart auto-email-worker
+
+# Stop worker
+sudo systemctl stop auto-email-worker
 
 # View cron logs
 ls -lt logs/
