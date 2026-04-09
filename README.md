@@ -98,11 +98,13 @@ This will:
 
 ### 3. Add your resume
 
-Place your resume PDF in the project root. Update the filename in `src/config.py` if needed:
+Place your resume PDF in the project root. Update the filename in `src/config.py`:
 
 ```python
 RESUME_PDF = os.path.join(BASE_DIR, "your_resume.pdf")
 ```
+
+> **Note:** The resume is read from this path and attached to every outgoing email. It is **not** pushed to any external service — it stays local on your machine.
 
 ### 4. Customize
 
