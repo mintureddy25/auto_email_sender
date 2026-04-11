@@ -30,6 +30,7 @@ After=network.target
 Type=simple
 User=$ACTUAL_USER
 WorkingDirectory=$SCRIPT_DIR
+Environment=PYTHONUNBUFFERED=1
 ExecStart=/usr/bin/python3 $SCRIPT_DIR/worker.py
 Restart=always
 RestartSec=10
@@ -48,13 +49,20 @@ echo "Queue worker service installed and started!"
 echo "  Status: sudo systemctl status auto-email-worker"
 echo "  Logs:   tail -f $SCRIPT_DIR/worker.log"
 
-# 4. Set up cron (9AM + 10:30PM) for the actual user, not root
+# 4. Set up cron for the actual user (not root)
+#    - scraper:  9AM + 10:30PM daily
+#    - cleanup:  Sunday 4AM weekly (truncates worker.log, resets sent_log.json)
+chmod +x "$SCRIPT_DIR/run.sh" "$SCRIPT_DIR/cleanup.sh" 2>/dev/null
 (sudo -u "$ACTUAL_USER" crontab -l 2>/dev/null | grep -v "auto_email_sender"; \
  echo "# Auto Email Sender - scrape LinkedIn + queue emails"; \
  echo "0 9 * * * $SCRIPT_DIR/run.sh"; \
- echo "30 22 * * * $SCRIPT_DIR/run.sh") | sudo -u "$ACTUAL_USER" crontab -
+ echo "30 22 * * * $SCRIPT_DIR/run.sh"; \
+ echo "# Auto Email Sender - weekly log cleanup"; \
+ echo "0 4 * * 0 $SCRIPT_DIR/cleanup.sh") | sudo -u "$ACTUAL_USER" crontab -
 
-echo "Cron jobs set: 9:00 AM and 10:30 PM daily"
+echo "Cron jobs set:"
+echo "  - scrape:  9:00 AM and 10:30 PM daily"
+echo "  - cleanup: 4:00 AM every Sunday (7-day log rotation)"
 
 echo ""
 echo "DONE! Architecture:"

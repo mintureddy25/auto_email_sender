@@ -11,6 +11,10 @@ JOB_LINK_REGEX = re.compile(
     r"https?://(?:[\w-]+\.)?(?:lever\.co|greenhouse\.io|workday\.com|jobs\.ashbyhq\.com|boards\.greenhouse\.io|apply\.workable\.com|jobs\.smartrecruiters\.com|careers\.[\w-]+\.com|[\w-]+\.applytojob\.com|angel\.co/[\w-]+/jobs|linkedin\.com/jobs)/\S+",
     re.IGNORECASE,
 )
+SHORT_LINK_REGEX = re.compile(
+    r"https?://(?:lnkd\.in|bit\.ly|tinyurl\.com|t\.co|buff\.ly|ow\.ly|rebrand\.ly|cutt\.ly)/\S+",
+    re.IGNORECASE,
+)
 EMAIL_REGEX = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 
 SKIP_EMAILS = ["noreply", "no-reply", "example.com", "test.com"]
@@ -40,6 +44,10 @@ def extract_form_links(text):
 
 def extract_job_links(text):
     return JOB_LINK_REGEX.findall(text)
+
+
+def extract_short_links(text):
+    return SHORT_LINK_REGEX.findall(text)
 
 
 def extract_email_from_profile(item):

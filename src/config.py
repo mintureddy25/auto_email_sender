@@ -9,7 +9,12 @@ APIFY_TOKEN = os.getenv("APIFY_TOKEN")
 
 # RabbitMQ
 RABBITMQ_URL = os.getenv("RABBITMQ_URL")
+
+# Per-data-type queue names (each type owns its own queue + DLX + failed queue).
+# Add a new block here when you register a new DataType with a queue_name.
 EMAIL_QUEUE = "auto_email_queue"
+EMAIL_DLX = "auto_email_dlx"
+EMAIL_FAILED_QUEUE = "auto_email_failed"
 
 # Email
 EMAIL_USER = os.getenv("EMAIL_USER")
@@ -25,17 +30,13 @@ SENT_LOG_FILE = os.path.join(DATA_DIR, "sent_log.json")
 PHONE_NUMBERS_FILE = os.path.join(DATA_DIR, "phone_numbers.json")
 FORM_LINKS_FILE = os.path.join(DATA_DIR, "form_links.json")
 JOB_LINKS_FILE = os.path.join(DATA_DIR, "job_links.json")
-RESUME_PDF = os.path.join(BASE_DIR, "chappeta_sai_teja_reddy_resume.pdf")
+RESUME_PDF = os.path.join(BASE_DIR, "saitejareddyresume.pdf")
 
 # Scraper config
 HIRING_POST_QUERIES = [
-    "hiring full stack developer India",
-    "hiring software engineer India",
-    "hiring backend developer India",
-    "hiring frontend developer India",
-    "hiring SDE India",
-    "hiring react developer India",
-    "hiring node.js developer India",
+    "hiring full stack developer Bangalore",
+    "hiring software engineer Bangalore",
+    "hiring SDE Bangalore",
 ]
 
 RECRUITER_TITLES = [
@@ -46,7 +47,7 @@ RECRUITER_TITLES = [
     "Hiring Manager",
 ]
 
-LOCATIONS = ["India", "Bangalore", "Hyderabad", "Pune", "Delhi", "Mumbai"]
+LOCATIONS = ["Bangalore"]
 
 TARGET_COMPANIES = [
     "https://www.linkedin.com/company/walmart",
@@ -109,6 +110,23 @@ TARGET_COMPANIES = [
 MAX_POST_EMAILS = 50
 MAX_PEOPLE_EMAILS = 50
 MAX_COMPANY_EMAILS = 50
+
+# --- Per-scraper Apify filters (all tunables live here) ---
+# hiring_posts
+HIRING_MAX_POSTS = 117
+HIRING_POSTED_LIMIT = "24h"
+HIRING_SCRAPE_PAGES = 10
+
+# people_search
+PEOPLE_QUERY = "recruiter hiring software engineer developer"
+PEOPLE_MAX_ITEMS = 400
+PEOPLE_TAKE_PAGES = 5
+PEOPLE_SCRAPER_MODE = "Full + email search"
+
+# company_employees
+COMPANY_MAX_ITEMS = 200
+COMPANY_SCRAPER_MODE = "Full + email search ($12 per 1k)"
+COMPANY_BATCH_MODE = "one_by_one"
 
 EMAIL_BODY_TEMPLATE = (
     "Hi,\n\n"

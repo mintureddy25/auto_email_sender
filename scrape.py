@@ -1,26 +1,23 @@
 """
-Cron job: Scrapes LinkedIn for emails, phones, form links, job links.
-Inserts new contacts into RabbitMQ queues.
+Cron entry: runs every registered scraper in src/scrapers/, persists
+results per DataType, and publishes to each type's queue (if any).
+
+Add a new scraper: drop a file in src/scrapers/.
+Add a new data type: drop a file in src/collectors/.
+Add a new sender: drop a file in src/senders/.
+No edits here needed.
 """
 
 from datetime import datetime
+
 from apify_client import ApifyClient
 
-from src.config import APIFY_TOKEN, EMAILS_FILE, PHONE_NUMBERS_FILE, FORM_LINKS_FILE, JOB_LINKS_FILE
+from src.config import APIFY_TOKEN
 from src.utils.file_utils import load_json, save_json
-from src.utils.dedup import get_seen_emails, get_seen_phones, get_seen_form_links, get_seen_job_links
-from src.queue.rabbitmq import queue_emails
-from src.scrapers import hiring_posts, people_search, company_employees
-
-apify = ApifyClient(APIFY_TOKEN)
-
-
-def collect_items(run):
-    items = []
-    if run:
-        for item in apify.dataset(run["defaultDatasetId"]).iterate_items():
-            items.append(item)
-    return items
+from src.queue.rabbitmq import publish_batch
+from src.scrapers import get_all as get_scrapers
+from src.scrapers.base import ScrapeResult, SeenSet
+from src.collectors import get_all as get_types
 
 
 def main():
@@ -28,71 +25,52 @@ def main():
     print(f"  AUTO SCRAPER - {datetime.now()}")
     print("=" * 60)
 
-    seen_emails = get_seen_emails()
-    seen_phones = get_seen_phones()
-    seen_forms = get_seen_form_links()
-    seen_jobs = get_seen_job_links()
-    print(f"Already processed: {len(seen_emails)} emails, {len(seen_phones)} phones")
+    types = get_types()
+    print(f"Data types: {[t.name for t in types]}")
 
-    # Source 1: Hiring posts
-    post_emails, post_phones, post_forms, post_jobs = hiring_posts.scrape(
-        apify, collect_items, seen_emails, seen_phones, seen_forms, seen_jobs
-    )
+    # Load dedup set per type
+    seen = SeenSet()
+    for t in types:
+        for key in t.load_seen():
+            seen.add(t.name, key)
+    summary_seen = ", ".join(f"{t.name}={seen.count(t.name)}" for t in types)
+    print(f"Already processed: {summary_seen}")
 
-    # Source 2: People search
-    people_emails, people_phones = people_search.scrape(
-        apify, collect_items, seen_emails, seen_phones
-    )
+    # Run every registered scraper
+    apify = ApifyClient(APIFY_TOKEN)
+    combined = ScrapeResult()
+    scrapers = get_scrapers()
+    print(f"Registered scrapers: {[s.name for s in scrapers]}")
 
-    # Source 3: Company employees
-    company_emails, company_phones = company_employees.scrape(
-        apify, collect_items, seen_emails, seen_phones
-    )
+    for ScraperCls in scrapers:
+        scraper = ScraperCls(apify)
+        try:
+            combined.merge(scraper.run(seen))
+        except Exception as e:
+            print(f"[{scraper.name}] fatal error: {e}")
 
-    # Save emails
-    new_emails = post_emails + people_emails + company_emails
-    if new_emails:
-        all_stored = load_json(EMAILS_FILE)
-        all_stored.extend(new_emails)
-        save_json(EMAILS_FILE, all_stored)
+    # Persist every type that got new items
+    for t in types:
+        items = combined.get(t.name)
+        if not items:
+            continue
+        stored = load_json(t.storage_file)
+        stored.extend(items)
+        save_json(t.storage_file, stored)
 
-    # Save phones
-    all_phones = post_phones + people_phones + company_phones
-    if all_phones:
-        stored = load_json(PHONE_NUMBERS_FILE)
-        stored.extend(all_phones)
-        save_json(PHONE_NUMBERS_FILE, stored)
-
-    # Save form links
-    if post_forms:
-        stored = load_json(FORM_LINKS_FILE)
-        stored.extend(post_forms)
-        save_json(FORM_LINKS_FILE, stored)
-
-    # Save job links
-    if post_jobs:
-        stored = load_json(JOB_LINKS_FILE)
-        stored.extend(post_jobs)
-        save_json(JOB_LINKS_FILE, stored)
-
-    # Queue for sending
+    # Publish to queue for every type that has a queue_name
     print("\n" + "=" * 60)
-    if new_emails:
-        queue_emails(new_emails)
-    else:
-        print("  No new emails to queue.")
-
-    if all_phones:
-        print(f"  Saved {len(all_phones)} phone numbers to {PHONE_NUMBERS_FILE}")
+    for t in types:
+        items = combined.get(t.name)
+        if items and t.queue_name:
+            publish_batch(t, items)
 
     # Summary
     print("\n" + "=" * 60)
     print("  SUMMARY")
     print("=" * 60)
-    print(f"  Emails:      {len(new_emails)}")
-    print(f"  Phones:      {len(all_phones)}")
-    print(f"  Form links:  {len(post_forms)}")
-    print(f"  Job links:   {len(post_jobs)}")
+    for t in types:
+        print(f"  {t.name:15s} {combined.count(t.name)}")
     print("=" * 60)
 
 

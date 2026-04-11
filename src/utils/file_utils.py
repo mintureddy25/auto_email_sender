@@ -3,10 +3,16 @@ import os
 
 
 def load_json(filepath):
-    if os.path.exists(filepath):
+    if not os.path.exists(filepath):
+        return []
+    try:
         with open(filepath, "r") as f:
-            return json.load(f)
-    return []
+            content = f.read()
+        if not content.strip():
+            return []
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return []
 
 
 def save_json(filepath, data):

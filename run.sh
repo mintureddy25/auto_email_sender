@@ -1,23 +1,35 @@
 #!/bin/bash
-# Cron job: scrape LinkedIn + insert into RabbitMQ queue
-# Runs via cron at 9:00 AM and 10:30 PM daily
-# Worker service (auto-email-worker) picks up queued emails 24/7
+# Cron job: scrape LinkedIn + insert items into per-collector RabbitMQ queues.
+# Runs via cron at 9:00 AM and 10:30 PM daily.
+# Worker service (auto-email-worker) drains the queues 24/7.
+
+set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR" || exit 1
 
+mkdir -p ./logs
 LOG_FILE="./logs/cron_$(date +%Y%m%d_%H%M%S).log"
-mkdir -p ./logs ./data
+ln -sf "$(basename "$LOG_FILE")" ./logs/latest.log
 
-echo "========================================" >> "$LOG_FILE"
-echo "Run started: $(date)" >> "$LOG_FILE"
-echo "========================================" >> "$LOG_FILE"
+{
+    echo "========================================"
+    echo "Run started: $(date)"
+    echo "========================================"
+} >> "$LOG_FILE"
 
+set +e
 python3 scrape.py >> "$LOG_FILE" 2>&1
+RC=$?
+set -e
 
-echo "========================================" >> "$LOG_FILE"
-echo "Run finished: $(date)" >> "$LOG_FILE"
-echo "========================================" >> "$LOG_FILE"
+{
+    echo "========================================"
+    echo "Run finished: $(date) (exit=$RC)"
+    echo "========================================"
+} >> "$LOG_FILE"
 
-# Keep only last 30 logs
-ls -t ./logs/cron_*.log 2>/dev/null | tail -n +31 | xargs rm -f 2>/dev/null
+# Delete cron logs older than 7 days (cleanup.sh handles the rest weekly)
+find ./logs -maxdepth 1 -name "cron_*.log" -type f -mtime +7 -delete 2>/dev/null || true
+
+exit $RC

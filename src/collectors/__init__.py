@@ -1,7 +1,8 @@
-"""Scraper registry with auto-discovery.
+"""Data type registry with auto-discovery.
 
-Every module in this package that defines a @register-decorated class is
-auto-imported on get_all() — drop a new file in here and it's live.
+A DataType describes something scrapers can collect (emails, phones, ...)
+and where it should be stored + queued. Drop a new file in this folder
+to register a new type.
 """
 
 import importlib
@@ -22,9 +23,16 @@ def _discover():
         name = mod_info.name
         if name.startswith("_") or name == "base":
             continue
-        importlib.import_module(f"src.scrapers.{name}")
+        importlib.import_module(f"src.collectors.{name}")
 
 
 def get_all():
     _discover()
     return sorted(_REGISTRY, key=lambda c: c.name)
+
+
+def get(name: str):
+    for c in get_all():
+        if c.name == name:
+            return c
+    return None
