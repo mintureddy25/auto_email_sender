@@ -12,6 +12,8 @@ def log_sent(email_data, status):
         "company": email_data.get("company", ""),
         "title": email_data.get("title", ""),
         "source": email_data.get("source", ""),
+        "role": email_data.get("role", ""),
+        "profileUrl": email_data.get("profileUrl", ""),
         "subject": email_data.get("subject", ""),
         "status": status,
         "sent_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

@@ -26,5 +26,9 @@ def _discover():
 
 
 def get_all():
+    from src.config import SCRAPER_ENABLED
     _discover()
-    return sorted(_REGISTRY, key=lambda c: c.name)
+    return sorted(
+        [c for c in _REGISTRY if SCRAPER_ENABLED.get(c.name, True)],
+        key=lambda c: c.name,
+    )

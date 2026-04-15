@@ -50,21 +50,24 @@ echo "  Status: sudo systemctl status auto-email-worker"
 echo "  Logs:   tail -f $SCRIPT_DIR/worker.log"
 
 # 4. Set up cron for the actual user (not root)
-#    - scraper:  9AM + 10:30PM daily
+#    - scraper:  10AM daily (single run)
 #    - cleanup:  Sunday 4AM weekly (truncates worker.log, resets sent_log.json)
+#    - resend:   Monday 10AM weekly (re-queue last week's sent emails)
 chmod +x "$SCRIPT_DIR/run.sh" "$SCRIPT_DIR/cleanup.sh" 2>/dev/null
 (sudo -u "$ACTUAL_USER" crontab -l 2>/dev/null | grep -v "auto_email_sender"; \
  echo "# Auto Email Sender - scrape LinkedIn + queue emails"; \
- echo "0 9 * * * $SCRIPT_DIR/run.sh"; \
- echo "30 22 * * * $SCRIPT_DIR/run.sh"; \
+ echo "0 10 * * * $SCRIPT_DIR/run.sh"; \
  echo "# Auto Email Sender - weekly log cleanup"; \
- echo "0 4 * * 0 $SCRIPT_DIR/cleanup.sh") | sudo -u "$ACTUAL_USER" crontab -
+ echo "0 4 * * 0 $SCRIPT_DIR/cleanup.sh"; \
+ echo "# Auto Email Sender - Monday resend (re-queue last week's sent emails)"; \
+ echo "0 10 * * 1 cd $SCRIPT_DIR && /usr/bin/python3 $SCRIPT_DIR/resend.py >> $SCRIPT_DIR/logs/resend.log 2>&1") | sudo -u "$ACTUAL_USER" crontab -
 
 echo "Cron jobs set:"
-echo "  - scrape:  9:00 AM and 10:30 PM daily"
+echo "  - scrape:  10:00 AM daily"
 echo "  - cleanup: 4:00 AM every Sunday (7-day log rotation)"
+echo "  - resend:  10:00 AM every Monday (re-queue last week's sent emails)"
 
 echo ""
 echo "DONE! Architecture:"
-echo "  [Cron 9AM+10:30PM] scrape.py  -> RabbitMQ queue + data/*.json"
-echo "  [24/7 Service]     worker.py  -> sends emails instantly"
+echo "  [Cron 10AM]     scrape.py  -> RabbitMQ queue + data/*.json"
+echo "  [24/7 Service]  worker.py  -> sends emails instantly"

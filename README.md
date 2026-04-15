@@ -8,7 +8,7 @@ single file drop-in — no central glue code.
 ## Architecture
 
 ```
-[Cron 9AM + 10:30PM]                          [24/7 systemd Service]
+[Cron 10AM daily]                             [24/7 systemd Service]
 run.sh → scrape.py                            auto-email-worker → worker.py
   │                                               │
   ├── src/scrapers/*            (registry)        ├── src/senders/*   (registry)
@@ -175,9 +175,9 @@ This will:
 - Install and start the `auto-email-worker` systemd service (24/7, auto-restart,
   `PYTHONUNBUFFERED=1`, resilient pika heartbeat + TCP keepalives)
 - Install three cron jobs for your user:
-  - `0 9 * * *`  → scrape (9 AM)
-  - `30 22 * * *` → scrape (10:30 PM)
+  - `0 10 * * *` → scrape (10 AM daily)
   - `0 4 * * 0` → cleanup (Sunday 4 AM)
+  - `0 10 * * 1` → resend (Monday 10 AM)
 
 ## Extending
 

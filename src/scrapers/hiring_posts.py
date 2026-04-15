@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 from src.scrapers import register
@@ -11,6 +12,22 @@ from src.utils.extractors import (
     extract_form_links, extract_job_links, extract_short_links,
 )
 from src.utils.url_resolver import resolve_map
+
+_ROLE_PATTERNS = [
+    (r'\b(?:senior\s+)?(?:full[\s-]?stack)\s+(?:developer|engineer)\b', 'Full Stack Developer'),
+    (r'\b(?:senior\s+)?(?:back[\s-]?end|backend)\s+(?:developer|engineer)\b', 'Backend Developer'),
+    (r'\b(?:senior\s+)?(?:front[\s-]?end|frontend)\s+(?:developer|engineer)\b', 'Frontend Developer'),
+    (r'\bsde[\s-]?(?:i{1,3}|[123])?\b', 'SDE'),
+    (r'\b(?:senior\s+)?software\s+(?:development\s+)?engineer\b', 'Software Engineer'),
+]
+
+
+def _detect_role(text):
+    text_lower = text.lower()
+    for pattern, role in _ROLE_PATTERNS:
+        if re.search(pattern, text_lower):
+            return role
+    return ""
 
 
 @register
@@ -53,6 +70,8 @@ class HiringPostsScraper(BaseScraper):
                 author = item.get("author", {})
                 author_name = author.get("name", "")
 
+                role = _detect_role(full_text)
+
                 if result.count("emails") < MAX_POST_EMAILS:
                     for email in extract_emails(full_text):
                         if not seen.has("emails", email) and is_valid_email(email):
@@ -63,6 +82,7 @@ class HiringPostsScraper(BaseScraper):
                                 "company": "",
                                 "profileUrl": author.get("linkedinUrl", ""),
                                 "source": "hiring_post",
+                                "role": role,
                             })
                             seen.add("emails", email)
 

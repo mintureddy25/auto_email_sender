@@ -6,19 +6,33 @@ from email.mime.text import MIMEText
 
 from src.config import (
     EMAIL_USER, EMAIL_PASSWORD, EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT,
-    RESUME_PDF, EMAIL_BODY_TEMPLATE, SUBJECT,
+    RESUME_PDF, SUBJECT, SUBJECT_BY_SOURCE, BODY_BY_SOURCE, EMAIL_BODY_TEMPLATE,
 )
 from src.collectors.emails import Emails
 from src.senders import register
 from src.senders.base import BaseSender
 
 
-def _send_smtp(email: str, subject: str) -> None:
+def _resolve_template(template, job):
+    try:
+        return template.format_map({
+            "name": job.get("name") or "there",
+            "company": job.get("company") or "your company",
+            "title": job.get("title") or "",
+            "email": job.get("email") or "",
+            "source": job.get("source") or "",
+            "role": job.get("role") or "Full Stack Developer",
+        })
+    except (KeyError, ValueError):
+        return template
+
+
+def _send_smtp(email: str, subject: str, body: str) -> None:
     msg = MIMEMultipart()
     msg["From"] = EMAIL_USER
     msg["To"] = email
     msg["Subject"] = subject
-    msg.attach(MIMEText(EMAIL_BODY_TEMPLATE.format(subject=subject), "plain"))
+    msg.attach(MIMEText(body, "plain"))
 
     if not os.path.exists(RESUME_PDF):
         raise FileNotFoundError(f"Resume PDF not found: {RESUME_PDF}")
@@ -43,9 +57,11 @@ class EmailSender(BaseSender):
     data_type = Emails
 
     def send(self, job: dict) -> None:
-        _send_smtp(job["email"], job.get("subject", SUBJECT))
-
-
-# Back-compat shim for any caller that still does `email_sender.send(...)`
-def send(email: str, subject: str) -> None:
-    _send_smtp(email, subject)
+        source = job.get("source", "")
+        subject = _resolve_template(
+            SUBJECT_BY_SOURCE.get(source, SUBJECT), job
+        )
+        body = _resolve_template(
+            BODY_BY_SOURCE.get(source, EMAIL_BODY_TEMPLATE), job
+        )
+        _send_smtp(job["email"], subject, body)
