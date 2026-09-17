@@ -41,55 +41,97 @@ Three registries, each auto-discovered from its folder:
 
 ## Project Structure
 
+Only the five files wired into cron/systemd live at the root. Everything else
+is grouped by what it is.
+
 ```
 auto_email_sender/
-├── scrape.py            # Entry: cron scraper (drives the registries)
-├── worker.py            # Entry: 24/7 sender worker (drives the registries)
-├── run.sh               # Cron wrapper for scrape.py
-├── cleanup.sh           # Weekly log rotator (Sunday 4am)
-├── setup.sh             # One-shot install: systemd service + cron entries
-├── requeue_failed.py    # Drain every failed queue back into its main queue
-├── requirements.txt
-├── .env.example
 │
-├── src/
-│   ├── config.py                # All tunables live here (queries, queues, filters)
+│  ── Entry points (referenced by cron + the systemd unit — do not move) ──
+├── scrape.py            # Cron 10AM: runs every scraper, persists, publishes
+├── worker.py            # 24/7 systemd service: runs every sender
+├── resend.py            # Cron Mon 10AM: re-queue last week's sent emails
+├── run.sh               # Cron wrapper around scrape.py (logging + rotation)
+├── cleanup.sh           # Cron Sun 4AM: truncate logs, reset sent_log.json
+│
+├── README.md
+├── requirements.txt
+├── .env / .env.example
+│
+├── src/                          # ── The pipeline ──
+│   ├── config.py                 # All tunables live here (queries, queues, filters, paths)
 │   │
-│   ├── collectors/              # DATA TYPES — drop a file to add one
-│   │   ├── base.py              #   DataType: name, storage_file, dedup_key, queue_name
-│   │   ├── emails.py            #   Emails      → auto_email_queue
-│   │   ├── phones.py            #   Phones      → store-only (no queue)
-│   │   ├── form_links.py        #   FormLinks   → store-only
-│   │   └── job_links.py         #   JobLinks    → store-only
+│   ├── collectors/               # DATA TYPES — drop a file to add one
+│   │   ├── base.py               #   DataType: name, storage_file, dedup_key, queue_name
+│   │   ├── emails.py             #   Emails       → auto_email_queue
+│   │   ├── phones.py             #   Phones       → store-only (no queue)
+│   │   ├── form_links.py         #   FormLinks    → store-only
+│   │   ├── job_links.py          #   JobLinks     → store-only
+│   │   └── linkedin_jobs.py      #   LinkedInJobs → store-only
 │   │
-│   ├── scrapers/                # SCRAPERS — drop a file to add one
-│   │   ├── base.py              #   BaseScraper, ScrapeResult, SeenSet
-│   │   ├── hiring_posts.py      #   LinkedIn hiring posts (harvestapi)
-│   │   ├── people_search.py     #   LinkedIn profile search
-│   │   └── company_employees.py #   LinkedIn company employees
+│   ├── scrapers/                 # SCRAPERS — drop a file to add one
+│   │   ├── base.py               #   BaseScraper, ScrapeResult, SeenSet
+│   │   ├── hiring_posts.py       #   LinkedIn hiring posts (harvestapi)
+│   │   ├── people_search.py      #   LinkedIn profile search
+│   │   ├── company_employees.py  #   LinkedIn company employees
+│   │   ├── linkedin_jobs.py      #   LinkedIn job search
+│   │   ├── career_sites.py       #   Company career-site listings
+│   │   ├── naukri_jobs.py        #   Naukri via jobspy (free)
+│   │   └── indeed_jobs.py        #   Indeed via jobspy (free)
 │   │
-│   ├── senders/                 # SENDERS — drop a file to add one
-│   │   ├── base.py              #   BaseSender: name + data_type + send(job)
-│   │   └── email_sender.py      #   EmailSender (Gmail SMTP + resume attachment)
+│   ├── senders/                  # SENDERS — drop a file to add one
+│   │   ├── base.py               #   BaseSender: name + data_type + send(job)
+│   │   └── email_sender.py       #   EmailSender (Gmail SMTP + resume attachment)
 │   │
 │   ├── queue/
-│   │   └── rabbitmq.py          # Resilient pika wrapper (heartbeat, keepalive,
-│   │                            #   publish_batch, consume_multi, requeue_failed)
+│   │   └── rabbitmq.py           # Resilient pika wrapper (heartbeat, keepalive,
+│   │                             #   publish_batch, consume_multi, requeue_failed)
 │   │
 │   └── utils/
-│       ├── file_utils.py        # JSON read/write
-│       ├── extractors.py        # Email, phone, URL regex
-│       ├── url_resolver.py      # Short-link resolver
-│       └── sent_log.py          # Append to sent_log.json after a send
+│       ├── file_utils.py         # JSON read/write
+│       ├── extractors.py         # Email, phone, URL regex
+│       ├── url_resolver.py       # Short-link resolver
+│       └── sent_log.py           # Append to sent_log.json after a send
 │
-├── data/                 # Runtime state (gitignored)
-│   ├── emails.json       # Master email list (dedup source, never wiped)
-│   ├── sent_log.json     # Send history (wiped weekly by cleanup.sh)
+├── plugins/                      # ── Standalone inbox tools (see plugins/README.md) ──
+│   ├── send_email.py             # Importable AND runnable: python3 -m plugins.send_email
+│   ├── reply_email.py            #   Use these instead of writing inline IMAP/SMTP code
+│   ├── read_email.py
+│   ├── read_all_emails.py
+│   ├── download_attachments.py
+│   ├── _imap.py / _smtp.py       # Shared connection helpers
+│   └── README.md
+│
+├── scripts/                      # ── One-off maintenance, run by hand ──
+│   ├── _bootstrap.py             # Puts the project root on sys.path
+│   ├── requeue_failed.py         # Drain every failed queue back into its main queue
+│   ├── drain_pending.py          # Publish items held by scrape_hold.py
+│   ├── scrape_hold.py            # Scrape but hold items instead of queueing (weekends)
+│   ├── recover_hiring.py         # Re-pull cached Apify datasets (free, no credits)
+│   └── scrape_retry_failed.py    # Re-run queries that died on an Apify credit limit
+│
+├── setup/                        # ── One-shot installers ──
+│   ├── setup.sh                  # Linux: systemd service + cron entries
+│   └── setup-mac.sh              # macOS: launchd LaunchAgent (worker only)
+│
+├── assets/
+│   └── saitejareddyresume.pdf    # Attached to every outbound email (src.config.RESUME_PDF)
+│
+├── docs/                         # Hand-curated reference lists — not read by any code
+│   ├── target_companies_mid_level.json
+│   └── favourite_companies.json
+│
+├── data/                         # Runtime state (gitignored)
+│   ├── emails.json               # Master email list (dedup source, never wiped)
+│   ├── sent_log.json             # Send history (wiped weekly by cleanup.sh)
+│   ├── resend_emails.json        # Weekend sends, re-queued Monday by resend.py
+│   ├── pending_queue.json        # Items held by scrape_hold.py
 │   ├── phone_numbers.json
 │   ├── form_links.json
-│   └── job_links.json
+│   ├── job_links.json
+│   └── linkedin_jobs.json
 │
-└── logs/                 # Cron + cleanup logs (gitignored)
+└── logs/                         # Cron + cleanup logs (gitignored)
 ```
 
 ## Prerequisites
@@ -119,10 +161,10 @@ Edit `.env`:
 
 ### 2. Add your resume
 
-Place your resume PDF in the project root and update the filename in `src/config.py`:
+Place your resume PDF in `assets/` and update the filename in `src/config.py`:
 
 ```python
-RESUME_PDF = os.path.join(BASE_DIR, "your_resume.pdf")
+RESUME_PDF = os.path.join(ASSETS_DIR, "your_resume.pdf")
 ```
 
 The PDF stays local — attached to every outbound email, never uploaded anywhere.
@@ -164,8 +206,8 @@ EMAIL_FAILED_QUEUE = "auto_email_failed"
 ### 4. Install
 
 ```bash
-chmod +x setup.sh run.sh cleanup.sh
-sudo ./setup.sh
+chmod +x setup/setup.sh run.sh cleanup.sh
+sudo setup/setup.sh
 ```
 
 This will:
@@ -270,7 +312,7 @@ python3 scrape.py
 python3 worker.py
 
 # Drain every failed queue back into its main queue
-python3 requeue_failed.py
+python3 scripts/requeue_failed.py
 
 # Manually trigger cleanup
 ./cleanup.sh

@@ -38,27 +38,34 @@ FORM_LINKS_FILE = os.path.join(DATA_DIR, "form_links.json")
 JOB_LINKS_FILE = os.path.join(DATA_DIR, "job_links.json")
 LINKEDIN_JOBS_FILE = os.path.join(DATA_DIR, "linkedin_jobs.json")
 RESEND_EMAILS_FILE = os.path.join(DATA_DIR, "resend_emails.json")
-RESUME_PDF = os.path.join(BASE_DIR, "saitejareddyresume.pdf")
+PENDING_QUEUE_FILE = os.path.join(DATA_DIR, "pending_queue.json")
+
+# Static assets
+ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+RESUME_PDF = os.path.join(ASSETS_DIR, "saitejareddyresume.pdf")
 
 # Scraper enable/disable — set False to skip a scraper without deleting the file
 SCRAPER_ENABLED = {
     "hiring_posts": True,
-    "people_search": True,
-    "company_employees": True,
+    "people_search": False,
+    "company_employees": False,
     "linkedin_jobs": False,
     "career_sites": False,
+    "naukri_jobs": False,
+    "indeed_jobs": False,
 }
 
 # Scraper config
 HIRING_POST_QUERIES = [
-    # Pune
     "hiring full stack developer Pune",
-    "hiring software engineer Pune",
-    "hiring SDE Pune",
-    # Hyderabad
     "hiring full stack developer Hyderabad",
+    "hiring full stack developer Bengaluru",
+    "hiring software engineer Pune",
     "hiring software engineer Hyderabad",
+    "hiring software engineer Bengaluru",
+    "hiring SDE Pune",
     "hiring SDE Hyderabad",
+    "hiring SDE Bengaluru",
 ]
 
 RECRUITER_TITLES = [
@@ -69,67 +76,49 @@ RECRUITER_TITLES = [
     "Hiring Manager",
 ]
 
-LOCATIONS = ["Pune", "Hyderabad"]
+LOCATIONS = ["Bangalore", "Hyderabad", "Pune"]
 
 TARGET_COMPANIES = [
-    # Pune-heavy product / SaaS
-    "https://www.linkedin.com/company/icertis",
-    "https://www.linkedin.com/company/druva",
-    "https://www.linkedin.com/company/persistent-systems",
-    "https://www.linkedin.com/company/bmc-software",
-    "https://www.linkedin.com/company/veritas",
-    "https://www.linkedin.com/company/vmware",
-    "https://www.linkedin.com/company/nvidia",
-    "https://www.linkedin.com/company/mastercard",
-    "https://www.linkedin.com/company/barclays",
-    "https://www.linkedin.com/company/credit-suisse",
-    "https://www.linkedin.com/company/zs-associates",
-    "https://www.linkedin.com/company/gslab",
-    "https://www.linkedin.com/company/cybage-software",
-    "https://www.linkedin.com/company/kpit",
-    "https://www.linkedin.com/company/tieto",
-    "https://www.linkedin.com/company/harbinger-systems",
-    "https://www.linkedin.com/company/thoughtworks",
-    "https://www.linkedin.com/company/payatu",
-    # Hyderabad-heavy product / engineering
-    "https://www.linkedin.com/company/microsoft",
+    # Big tech India offices
     "https://www.linkedin.com/company/google",
+    "https://www.linkedin.com/company/microsoft",
     "https://www.linkedin.com/company/amazon",
-    "https://www.linkedin.com/company/apple",
-    "https://www.linkedin.com/company/facebook",
-    "https://www.linkedin.com/company/uber",
-    "https://www.linkedin.com/company/salesforce",
-    "https://www.linkedin.com/company/servicenow",
-    "https://www.linkedin.com/company/qualcomm",
-    "https://www.linkedin.com/company/darwinbox",
-    "https://www.linkedin.com/company/skitai",
-    "https://www.linkedin.com/company/pharmeasymarg",
-    "https://www.linkedin.com/company/highradius-corporation",
-    "https://www.linkedin.com/company/skyhighsecurity",
-    "https://www.linkedin.com/company/factset",
-    "https://www.linkedin.com/company/broadcomcorporation",
-    # Both Pune + Hyderabad offices
+    "https://www.linkedin.com/company/meta",
     "https://www.linkedin.com/company/adobe",
+    "https://www.linkedin.com/company/atlassian",
+    "https://www.linkedin.com/company/nvidia",
+    "https://www.linkedin.com/company/salesforce",
     "https://www.linkedin.com/company/oracle",
-    "https://www.linkedin.com/company/ibm",
-    "https://www.linkedin.com/company/sap",
-    "https://www.linkedin.com/company/accenture",
-    "https://www.linkedin.com/company/tcs",
-    "https://www.linkedin.com/company/infosys",
-    "https://www.linkedin.com/company/wipro",
-    "https://www.linkedin.com/company/cognizant",
-    "https://www.linkedin.com/company/capgemini",
-    # Indian product / fintech with Pune + Hyd hiring
+    "https://www.linkedin.com/company/intuit",
+    # Indian unicorns / scale-ups (not in previous list)
     "https://www.linkedin.com/company/swiggy",
-    "https://www.linkedin.com/company/zomato",
-    "https://www.linkedin.com/company/razorpay",
-    "https://www.linkedin.com/company/phonepe-internet",
-    "https://www.linkedin.com/company/paytm",
-    "https://www.linkedin.com/company/meesho",
+    "https://www.linkedin.com/company/zerodha",
     "https://www.linkedin.com/company/dream11",
-    "https://www.linkedin.com/company/freshworks",
-    "https://www.linkedin.com/company/zoho",
-    "https://www.linkedin.com/company/postman",
+    "https://www.linkedin.com/company/phonepe",
+    "https://www.linkedin.com/company/paytm",
+    "https://www.linkedin.com/company/flipkart",
+    "https://www.linkedin.com/company/nykaa",
+    "https://www.linkedin.com/company/byjus",
+    "https://www.linkedin.com/company/ola-cabs",
+    # AI / DevTools / Modern SaaS (different from previous)
+    "https://www.linkedin.com/company/devrev",
+    "https://www.linkedin.com/company/uniphore",
+    "https://www.linkedin.com/company/mindtickle",
+    "https://www.linkedin.com/company/amagicorp",
+    "https://www.linkedin.com/company/observeai",
+    # Fintech (different from previous)
+    "https://www.linkedin.com/company/juspay",
+    "https://www.linkedin.com/company/acko",
+    "https://www.linkedin.com/company/cleartax-in",
+    "https://www.linkedin.com/company/signzy",
+    "https://www.linkedin.com/company/m2p-fintech",
+    # Mid-stage product startups
+    "https://www.linkedin.com/company/hyperverge",
+    "https://www.linkedin.com/company/fyle",
+    "https://www.linkedin.com/company/zenoti",
+    "https://www.linkedin.com/company/dripcapital",
+    "https://www.linkedin.com/company/fynd",
+    "https://www.linkedin.com/company/wati-io",
 ]
 
 MAX_POST_EMAILS = 50
@@ -138,8 +127,8 @@ MAX_COMPANY_EMAILS = 50
 
 # --- Per-scraper Apify filters (all tunables live here) ---
 # hiring_posts
-HIRING_MAX_POSTS = 60
-HIRING_POSTED_LIMIT = "24h"
+HIRING_MAX_POSTS = 120
+HIRING_POSTED_LIMIT = "week"
 HIRING_SCRAPE_PAGES = 10
 
 # people_search
@@ -161,10 +150,10 @@ JOBS_TITLES = [
     "Frontend Developer",
     "Backend Developer",
 ]
-JOBS_POSTED_LIMIT = "24h"
+JOBS_POSTED_LIMIT = "week"
 JOBS_MAX_ITEMS = 50
 JOBS_SORT_BY = "date"
-JOBS_EXPERIENCE_LEVELS = ["entry_level", "associate", "mid_senior_level"]
+JOBS_EXPERIENCE_LEVELS = ["entry", "associate", "mid-senior"]
 JOBS_MAX_EXPERIENCE_YEARS = 5
 
 # career_sites (fantastic-jobs/career-site-job-listing-api)
@@ -224,26 +213,29 @@ CAREER_SITE_LIMIT = 200
 CAREER_SITE_TIME_RANGE = "7d"
 CAREER_SITE_EXPERIENCE = ["2-5", "5-10"]
 
+# jobspy scrapers (naukri_jobs, indeed_jobs) - free, no API key
+JOBSPY_SEARCH_TERMS = [
+    "full stack developer",
+    "software engineer",
+    "nodejs developer",
+    "react developer",
+]
+JOBSPY_LOCATIONS = ["Bangalore", "Hyderabad", "Pune"]
+JOBSPY_RESULTS_PER_QUERY = 30
+JOBSPY_HOURS_OLD = 24
+
 _BODY_COMMON = (
     "Okay, deep breath. 😮‍💨\n\n"
-    "You weren't going to read this. You were going to scroll, sip your coffee, and move on. But here's the thing 😏\n\n"
-    "**This email wasn't written for you by a human. It was sent by a bot I built from scratch.** 🤖\n"
-    "LinkedIn scrapers → Apify → RabbitMQ → SMTP workers → your inbox. 24/7 on my own server. Today, it picked you. Lucky you. 😎\n\n"
-    "I could've copy-pasted a template. Instead, I built the thing that copy-pastes for me.\n"
-    "Most candidates *send* emails. I *ship software*. You just felt the difference.\n\n"
-    "Who am I? A 3+ yr Full Stack Dev. Allergic to boring. Addicted to shipping. No tech I can't learn in 2 weeks, no role I'm too proud to take — FS, frontend, backend, DevOps — just let me build. 🏗️\n\n"
+    "Take a sip of coffee. But here's the thing 😏\n\n"
+    "I built a project that scrapes LinkedIn posts and emails, and sends emails automatically. **This email was also sent using my project.** 🤖\n\n"
     "Receipts, all live, all mine:\n"
     "🏏 **TPL Mania** — Dream11 built from scratch. Fantasy cricket, live scoring, payments → https://tplmania.org\n"
     "🎮 **TicTacToe Multiplayer** — WebSocket PvP, built in a weekend → https://tictactoe.saitejareddy.online\n"
     "🤖 **Auto Email Sender** — The bot that just hit your inbox. Open source → https://github.com/mintureddy25/auto_email_sender\n"
     "🌐 **Portfolio** → https://saitejareddy.online\n\n"
     "Tech stack? Whatever you're using. I don't marry frameworks — I ship with them, then move on. ⚡\n\n"
-    "Give me *any* role where someone owns features idea → prod, and I'll embarrass devs with 2x my XP. Onboard in days. Ship in weeks. 🚀\n\n"
-    "If this made you smirk, hit reply. Worst case: you close the tab. Best case: you find your next builder. 🙌\n\n"
     "**Sai Teja Reddy**\n"
-    "📍 Hyderabad · ⚡ 3+ yrs · 💼 Immediate joiner\n\n"
-    "P.S. Still here? You just finished a cold email a bot delivered. That's me in production. Imagine what I'd do with your codebase. 😎\n"
-    "P.P.S. Resume attached. She's thorough."
+    "📍 Hyderabad · ⚡ 3+ yrs · 💼 Immediate joiner"
 )
 
 BODY_BY_SOURCE = {

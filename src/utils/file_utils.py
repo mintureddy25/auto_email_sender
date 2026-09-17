@@ -8,6 +8,10 @@ def load_json(filepath):
     try:
         with open(filepath, "r") as f:
             content = f.read()
+        # Strip shell-style '#' comment lines so users can annotate JSON files.
+        content = "\n".join(
+            line for line in content.splitlines() if not line.lstrip().startswith("#")
+        )
         if not content.strip():
             return []
         return json.loads(content)

@@ -1,0 +1,44 @@
+{
+  "profile": "SDE-2 / Node.js Backend (3+ yrs) — TypeScript, NestJS/Express, React/Next.js, Python, PostgreSQL/Redis/Elasticsearch, AWS/Docker/K8s",
+  "location": "Hyderabad (open to relocate)",
+  "sourced": "web search, June 2026",
+  "companies": [
+    { "name": "Games24x7", "category": "gaming", "stage": "RMG", "careers": "https://www.games24x7.com/careers" },
+    { "name": "Gameskraft", "category": "gaming", "stage": "profitable RMG", "careers": "https://gameskraft.com/careers" },
+    { "name": "Junglee Games", "category": "gaming", "stage": "RMG", "careers": "https://www.jungleegames.com/careers" },
+    { "name": "MPL", "category": "gaming", "stage": "gaming platform", "careers": "https://careers.mpl.live" },
+
+    { "name": "Cashfree Payments", "category": "fintech", "stage": "payments infra", "careers": "https://www.cashfree.com/careers/" },
+    { "name": "smallcase", "category": "fintech", "stage": "investing", "careers": "https://www.smallcase.com/careers" },
+    { "name": "Fi Money (epiFi)", "category": "fintech", "stage": "neobank", "careers": "https://careers.fi.money" },
+    { "name": "Jupiter Money", "category": "fintech", "stage": "neobank", "careers": "https://jupiter.money/careers/" },
+    { "name": "Setu", "category": "fintech", "stage": "fintech APIs", "careers": "https://setu.co/careers" },
+    { "name": "M2P Fintech", "category": "fintech", "stage": "card/BaaS infra", "careers": "https://m2pfintech.com/careers/" },
+    { "name": "Perfios", "category": "fintech", "stage": "Series C", "careers": "https://www.perfios.com/careers/" },
+    { "name": "Signzy", "category": "fintech", "stage": "KYC/onboarding", "careers": "https://www.signzy.com/careers/" },
+    { "name": "GoSats", "category": "fintech", "stage": "YC", "careers": "https://gosats.io/careers" },
+    { "name": "GroMo", "category": "fintech", "stage": "YC W21", "careers": "https://gromo.in/careers" },
+    { "name": "Scripbox", "category": "fintech", "stage": "Series D", "careers": "https://scripbox.com/careers" },
+    { "name": "CoinSwitch", "category": "fintech", "stage": "Series C", "careers": "https://coinswitch.co/careers" },
+    { "name": "Rupeek", "category": "fintech", "stage": "Series E", "careers": "https://rupeek.com/careers" },
+
+    { "name": "Hasura", "category": "saas", "stage": "GraphQL platform", "careers": "https://hasura.io/careers/" },
+    { "name": "Darwinbox", "category": "saas", "stage": "HR SaaS (Hyderabad)", "careers": "https://careers.darwinbox.com" },
+    { "name": "Zenoti", "category": "saas", "stage": "wellness SaaS (Hyderabad)", "careers": "https://www.zenoti.com/careers" },
+    { "name": "Fyle", "category": "saas", "stage": "expense mgmt", "careers": "https://www.fylehq.com/careers" },
+    { "name": "Wati", "category": "saas", "stage": "WhatsApp API SaaS", "careers": "https://www.wati.io/careers" },
+    { "name": "HyperVerge", "category": "saas", "stage": "AI/KYC", "careers": "https://hyperverge.co/careers" },
+    { "name": "MindTickle", "category": "saas", "stage": "sales enablement", "careers": "https://www.mindtickle.com/careers/" },
+    { "name": "Observe.AI", "category": "saas", "stage": "contact-center AI", "careers": "https://www.observe.ai/careers" },
+    { "name": "DevRev", "category": "saas", "stage": "dev+CRM AI", "careers": "https://devrev.ai/careers" },
+    { "name": "Sprinklr", "category": "saas", "stage": "CXM SaaS", "careers": "https://careers.sprinklr.com" },
+    { "name": "Landeed", "category": "saas", "stage": "YC (Hyderabad)", "careers": "https://landeed.com/careers" },
+    { "name": "Increff", "category": "saas", "stage": "Series B", "careers": "https://www.increff.com/careers/" },
+    { "name": "Vahan", "category": "saas", "stage": "Series A", "careers": "https://vahan.ai/careers" },
+
+    { "name": "Zepto", "category": "consumer", "stage": "quick commerce", "careers": "https://zepto.com/careers" },
+    { "name": "Meesho", "category": "consumer", "stage": "Series F", "careers": "https://www.meesho.io/jobs" },
+    { "name": "Ninjacart", "category": "consumer", "stage": "agri supply chain", "careers": "https://ninjacart.com/careers" },
+    { "name": "Livspace", "category": "consumer", "stage": "Series F", "careers": "https://www.livspace.com/in/careers" }
+  ]
+}

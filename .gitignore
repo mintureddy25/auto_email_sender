@@ -1,8 +1,16 @@
+# Secrets
 .env
+
+# Python
 __pycache__/
 *.pyc
+.venv/
+
+# Runtime state & logs
 data/
 logs/
 worker.log
 *.log
+
+# Personal documents (resume lives in assets/)
 *.pdf

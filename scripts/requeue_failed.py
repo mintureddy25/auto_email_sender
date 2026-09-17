@@ -1,7 +1,12 @@
 """
 One-shot script: drain every DataType's failed queue back into its main queue.
 Use after fixing whatever caused the failures (e.g. missing resume PDF).
+
+Usage:
+    python3 scripts/requeue_failed.py
 """
+
+import _bootstrap  # noqa: F401
 
 from src.queue.rabbitmq import requeue_failed
 from src.collectors import get_all as get_types

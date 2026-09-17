@@ -1,4 +1,5 @@
 import os
+import re
 import smtplib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -27,12 +28,35 @@ def _resolve_template(template, job):
         return template
 
 
+def _to_plain(text: str) -> str:
+    t = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    t = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"\1", t)
+    return t
+
+
+def _to_html(text: str) -> str:
+    html = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html)
+    html = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", html)
+    html = re.sub(r"(https?://[^\s<]+)", r'<a href="\1">\1</a>', html)
+    html = html.replace("\n", "<br>\n")
+    return (
+        '<div style="font-family:Arial,Helvetica,sans-serif;'
+        'font-size:14px;line-height:1.55;color:#222;">'
+        f"{html}</div>"
+    )
+
+
 def _send_smtp(email: str, subject: str, body: str) -> None:
-    msg = MIMEMultipart()
+    msg = MIMEMultipart("mixed")
     msg["From"] = EMAIL_USER
     msg["To"] = email
     msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+
+    alt = MIMEMultipart("alternative")
+    alt.attach(MIMEText(_to_plain(body), "plain", "utf-8"))
+    alt.attach(MIMEText(_to_html(body), "html", "utf-8"))
+    msg.attach(alt)
 
     if not os.path.exists(RESUME_PDF):
         raise FileNotFoundError(f"Resume PDF not found: {RESUME_PDF}")
@@ -45,7 +69,7 @@ def _send_smtp(email: str, subject: str, body: str) -> None:
         )
         msg.attach(pdf_attachment)
 
-    with smtplib.SMTP(EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT) as server:
+    with smtplib.SMTP(EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, timeout=30) as server:
         server.starttls()
         server.login(EMAIL_USER, EMAIL_PASSWORD)
         server.send_message(msg)

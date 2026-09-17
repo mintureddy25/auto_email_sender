@@ -4,7 +4,7 @@ from datetime import datetime
 from src.scrapers import register
 from src.scrapers.base import BaseScraper, ScrapeResult, SeenSet
 from src.config import (
-    HIRING_POST_QUERIES, MAX_POST_EMAILS,
+    HIRING_POST_QUERIES,
     HIRING_MAX_POSTS, HIRING_POSTED_LIMIT, HIRING_SCRAPE_PAGES,
 )
 from src.utils.extractors import (
@@ -38,17 +38,26 @@ class HiringPostsScraper(BaseScraper):
         print(f"\n[{self.name}] LinkedIn Hiring Posts")
         result = ScrapeResult()
 
+        items = []
+        for q in HIRING_POST_QUERIES:
+            try:
+                run = self.apify.actor("harvestapi/linkedin-post-search").call(
+                    run_input={
+                        "searchQueries": [q],
+                        "scrapePages": HIRING_SCRAPE_PAGES,
+                        "maxPosts": HIRING_MAX_POSTS,
+                        "postedLimit": HIRING_POSTED_LIMIT,
+                    }
+                )
+                q_items = self.collect(run)
+                print(f"  [{q}] {len(q_items)} posts")
+                items.extend(q_items)
+            except Exception as e:
+                print(f"  [{q}] fetch error: {e}")
+                break
+        print(f"  Scraped {len(items)} posts total")
+
         try:
-            run = self.apify.actor("harvestapi/linkedin-post-search").call(
-                run_input={
-                    "searchQueries": HIRING_POST_QUERIES,
-                    "scrapePages": HIRING_SCRAPE_PAGES,
-                    "maxPosts": HIRING_MAX_POSTS,
-                    "postedLimit": HIRING_POSTED_LIMIT,
-                }
-            )
-            items = self.collect(run)
-            print(f"  Scraped {len(items)} posts")
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             # Batch-resolve all short links across every post (much faster
@@ -72,19 +81,18 @@ class HiringPostsScraper(BaseScraper):
 
                 role = _detect_role(full_text)
 
-                if result.count("emails") < MAX_POST_EMAILS:
-                    for email in extract_emails(full_text):
-                        if not seen.has("emails", email) and is_valid_email(email):
-                            result.add("emails", {
-                                "email": email,
-                                "name": author_name,
-                                "title": author.get("info", ""),
-                                "company": "",
-                                "profileUrl": author.get("linkedinUrl", ""),
-                                "source": "hiring_post",
-                                "role": role,
-                            })
-                            seen.add("emails", email)
+                for email in extract_emails(full_text):
+                    if not seen.has("emails", email) and is_valid_email(email):
+                        result.add("emails", {
+                            "email": email,
+                            "name": author_name,
+                            "title": author.get("info", ""),
+                            "company": "",
+                            "profileUrl": author.get("linkedinUrl", ""),
+                            "source": "hiring_post",
+                            "role": role,
+                        })
+                        seen.add("emails", email)
 
                 for phone in extract_phone_numbers(full_text):
                     if not seen.has("phones", phone):
